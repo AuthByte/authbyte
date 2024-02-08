@@ -1,0 +1,2 @@
+
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; } .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; } .gpt-item { position: relative; text-decoration: none; } .gpt-item img { width: 100%; height: auto; display: block; } .gpt-name { position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; color: white; font-weight: bold; background-color: rgba(0, 0, 0, 0.5); padding: 5px 0; }
