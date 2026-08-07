@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="52" viewBox="0 0 760 52">
+  <rect width="760" height="52" rx="10" fill="#020617" stroke="#1e293b"/>
+  <text x="20" y="33" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#34d399">❯</text>
+
+  <!-- line 1 -->
+  <text x="44" y="33" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#e2e8f0">
+    <animate attributeName="opacity" values="1;1;0;0;0;0;0;0" keyTimes="0;0.22;0.25;0.5;0.52;0.75;0.77;1" dur="10s" repeatCount="indefinite"/>
+    shipping weird little tools
+  </text>
+
+  <!-- line 2 -->
+  <text x="44" y="33" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#e2e8f0" opacity="0">
+    <animate attributeName="opacity" values="0;0;1;1;0;0;0;0" keyTimes="0;0.25;0.28;0.47;0.5;0.75;0.77;1" dur="10s" repeatCount="indefinite"/>
+    breaking things until they work
+  </text>
+
+  <!-- line 3 -->
+  <text x="44" y="33" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#e2e8f0" opacity="0">
+    <animate attributeName="opacity" values="0;0;0;0;1;1;0;0" keyTimes="0;0.25;0.5;0.52;0.55;0.72;0.75;1" dur="10s" repeatCount="indefinite"/>
+    auth · ai · product experiments
+  </text>
+
+  <!-- line 4 -->
+  <text x="44" y="33" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" fill="#e2e8f0" opacity="0">
+    <animate attributeName="opacity" values="0;0;0;0;0;0;1;1" keyTimes="0;0.25;0.5;0.52;0.75;0.77;0.8;1" dur="10s" repeatCount="indefinite"/>
+    currently: building in public
+  </text>
+
+  <rect width="9" height="18" y="17" fill="#22d3ee">
+    <animate attributeName="opacity" values="1;0;1" dur="0.9s" repeatCount="indefinite"/>
+    <animate attributeName="x" values="292;292;318;318;318;318;292;292;292;292;292;292;292;292;292;292" keyTimes="0;0.22;0.25;0.28;0.47;0.5;0.52;0.55;0.72;0.75;0.77;0.8;0.95;0.97;0.99;1" dur="10s" repeatCount="indefinite"/>
+  </rect>
+</svg>
