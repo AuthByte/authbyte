@@ -5,18 +5,14 @@
 
 <div align="center">
 
-<<<<<<< HEAD
   <img src="./assets/banner.png" alt="AuthByte" width="100%" />
-=======
-  <img src="./assets/banner.svg" alt="AuthByte" width="100%" />
->>>>>>> origin/main
 
   <br/><br/>
 
-  <img src="./assets/typing.svg" alt="Currently shipping" width="760" />
+  <sub><code>shipping weird little tools · auth · ai · product experiments</code></sub>
 
   <br/>
-  <img src="./assets/divider.svg" alt="" width="720" />
+  <img src="./assets/divider.svg" alt="" width="100%"/>
 
 </div>
 
@@ -39,16 +35,19 @@
 
 ### ▸ what I ship
 
-```text
-┌──────────────┬──────────────────────────────────────────────┐
-│  peptideos   │  TypeScript systems & product experiments    │
-│  dash        │  dashboards, data, and control surfaces      │
-│  SkodeGPT    │  sketch → HTML / creative AI tooling         │
-│  byteblitz   │  fast web experiments & playful UI           │
-│  wallpaper-  │  generative visuals & maker tools            │
-│  maker       │                                              │
-└──────────────┴──────────────────────────────────────────────┘
-```
+| | project | description |
+|:---:|:---|:---|
+| | [**The Floor**](https://github.com/AuthByte/the-floor2) | After-hours multi-agent investment committee — AI desk research & committee debate |
+| 🔒 | **Orch** | Multi-agent orchestration layer for coordinating models, tools, and workflows |
+| | [**analytics**](https://github.com/AuthByte/analytics) | Analytics & data tooling |
+| | [**token-price-index**](https://github.com/AuthByte/token-price-index) | Usage-weighted token price index from OpenRouter's most-used models |
+| | [**Holdco**](https://github.com/AuthByte/private-funds) | Dashboard for publicly traded funds that hold private companies (RVI, DXYZ, ARKVX…) |
+| | [**peptideos**](https://github.com/AuthByte/peptideos) | Compound research hub — peptides, supplements, and evidence profiles with AI search |
+| | [**Serenity's Picks**](https://github.com/AuthByte/dash) | Self-hosted stock picks tracker with LLM-driven tweet ingest |
+| | [**BlockLogger**](https://github.com/AuthByte/fuzzy-system) | Minecraft Bedrock block logging add-on with optional hosted dashboard |
+| | [**wallpaper-maker**](https://github.com/AuthByte/wallpaper-maker) | Generative wallpaper tooling & visual experiments |
+
+<sub>🔒 = private repo — listed here even when the code isn't public</sub>
 
 <div align="center">
 
@@ -77,14 +76,14 @@
 ### ▸ github pulse
 
 <div align="center">
-  <img height="165" src="https://github-readme-stats.vercel.app/api?username=AuthByte&show_icons=true&theme=radical&hide_border=true&bg_color=020617&title_color=22d3ee&icon_color=34d399&text_color=cbd5e1&ring_color=22d3ee" alt="AuthByte GitHub stats"/>
-  <img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=AuthByte&layout=compact&theme=radical&hide_border=true&bg_color=020617&title_color=22d3ee&text_color=cbd5e1" alt="Top languages"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=AuthByte&theme=radical" alt="Profile details"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=AuthByte&theme=radical" alt="Top languages"/>
 </div>
 
 <br/>
 
 <div align="center">
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="500"/>
+  <img src="https://streak-stats.demolab.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="100%"/>
 </div>
 
 ---
@@ -102,7 +101,7 @@
 
 <div align="center">
 
-  <img src="./assets/divider.svg" alt="" width="520" />
+  <img src="./assets/divider.svg" alt="" width="100%"/>
 
   <br/><br/>
 
