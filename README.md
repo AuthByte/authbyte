@@ -9,10 +9,10 @@
 
   <br/><br/>
 
-  <img src="./assets/typing.svg" alt="Currently shipping" width="760" />
+  <sub><code>shipping weird little tools · auth · ai · product experiments</code></sub>
 
   <br/>
-  <img src="./assets/divider.svg" alt="" width="720" />
+  <img src="./assets/divider.svg" alt="" width="100%"/>
 
 </div>
 
@@ -76,14 +76,14 @@
 ### ▸ github pulse
 
 <div align="center">
-  <img height="165" src="https://github-readme-stats.vercel.app/api?username=AuthByte&show_icons=true&theme=radical&hide_border=true&bg_color=020617&title_color=22d3ee&icon_color=34d399&text_color=cbd5e1&ring_color=22d3ee" alt="AuthByte GitHub stats"/>
-  <img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=AuthByte&layout=compact&theme=radical&hide_border=true&bg_color=020617&title_color=22d3ee&text_color=cbd5e1" alt="Top languages"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=AuthByte&theme=radical" alt="Profile details"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=AuthByte&theme=radical" alt="Top languages"/>
 </div>
 
 <br/>
 
 <div align="center">
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="500"/>
+  <img src="https://streak-stats.demolab.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="100%"/>
 </div>
 
 ---
@@ -101,7 +101,7 @@
 
 <div align="center">
 
-  <img src="./assets/divider.svg" alt="" width="520" />
+  <img src="./assets/divider.svg" alt="" width="100%"/>
 
   <br/><br/>
 
