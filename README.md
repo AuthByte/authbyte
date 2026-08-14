@@ -5,11 +5,7 @@
 
 <div align="center">
 
-<<<<<<< HEAD
   <img src="./assets/banner.png" alt="AuthByte" width="100%" />
-=======
-  <img src="./assets/banner.svg" alt="AuthByte" width="100%" />
->>>>>>> origin/main
 
   <br/><br/>
 
@@ -39,16 +35,19 @@
 
 ### ▸ what I ship
 
-```text
-┌──────────────┬──────────────────────────────────────────────┐
-│  peptideos   │  TypeScript systems & product experiments    │
-│  dash        │  dashboards, data, and control surfaces      │
-│  SkodeGPT    │  sketch → HTML / creative AI tooling         │
-│  byteblitz   │  fast web experiments & playful UI           │
-│  wallpaper-  │  generative visuals & maker tools            │
-│  maker       │                                              │
-└──────────────┴──────────────────────────────────────────────┘
-```
+| | project | description |
+|:---:|:---|:---|
+| | [**The Floor**](https://github.com/AuthByte/the-floor2) | After-hours multi-agent investment committee — AI desk research & committee debate |
+| 🔒 | **Orch** | Multi-agent orchestration layer for coordinating models, tools, and workflows |
+| | [**analytics**](https://github.com/AuthByte/analytics) | Analytics & data tooling |
+| | [**token-price-index**](https://github.com/AuthByte/token-price-index) | Usage-weighted token price index from OpenRouter's most-used models |
+| | [**Holdco**](https://github.com/AuthByte/private-funds) | Dashboard for publicly traded funds that hold private companies (RVI, DXYZ, ARKVX…) |
+| | [**peptideos**](https://github.com/AuthByte/peptideos) | Compound research hub — peptides, supplements, and evidence profiles with AI search |
+| | [**Serenity's Picks**](https://github.com/AuthByte/dash) | Self-hosted stock picks tracker with LLM-driven tweet ingest |
+| | [**BlockLogger**](https://github.com/AuthByte/fuzzy-system) | Minecraft Bedrock block logging add-on with optional hosted dashboard |
+| | [**wallpaper-maker**](https://github.com/AuthByte/wallpaper-maker) | Generative wallpaper tooling & visual experiments |
+
+<sub>🔒 = private repo — listed here even when the code isn't public</sub>
 
 <div align="center">
 
