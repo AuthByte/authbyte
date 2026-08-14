@@ -83,7 +83,7 @@
 <br/>
 
 <div align="center">
-  <img src="https://streak-stats.demolab.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="100%"/>
+  <img src="https://github-readme-streak-stats.herokuapp.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="495"/>
 </div>
 
 ---
