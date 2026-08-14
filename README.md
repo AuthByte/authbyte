@@ -5,7 +5,11 @@
 
 <div align="center">
 
+<<<<<<< HEAD
   <img src="./assets/banner.png" alt="AuthByte" width="100%" />
+=======
+  <img src="./assets/banner.svg" alt="AuthByte" width="100%" />
+>>>>>>> origin/main
 
   <br/><br/>
 
