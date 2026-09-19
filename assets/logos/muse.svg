@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Meta Muse">
+  <defs>
+    <linearGradient id="museGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0081FB"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#museGrad)" d="M8 48c0-2 1-4 3-6l10-14 8 12 8-12 10 14c2 2 3 4 3 6v4H8v-4zm6-4l6-8 6 9 6-9 6 8H14z"/>
+  <path fill="none" stroke="url(#museGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M12 44 L22 22 L32 38 L42 22 L52 44"/>
+</svg>

@@ -1,25 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>authbyte.tech</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="nebula lfg — agentic engineer building AI agents, tools, and sharp little products">
+  <title>nebula lfg · agentic engineer</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <a href="https://chat.openai.com/g/g-lyZm7Ef5l-skodegpt-sketch-to-html" class="gpt-item">
-            <img src="f3e13f61-b167-4517-adde-b9f2d6609345.png" alt="SkodeGPT">
-            <span class="gpt-name">SkodeGPT</span>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="nav-brand" href="#">nebula <span class="accent">lfg</span></a>
+      <ul class="nav-links">
+        <li><a href="#agents">Agents</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="https://github.com/AuthByte" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-banner">
+        <img src="assets/banner.png" alt="" width="1200" height="360" decoding="async">
+      </div>
+      <div class="hero-content">
+        <p class="hero-eyebrow">personal portfolio · work in progress</p>
+        <h1 id="hero-title">Agentic engineer</h1>
+        <p class="hero-lead">
+          I design agents that <em>do</em> the work — phone calls, cross-bot messaging, routines, and multi-agent orchestration —
+          then ship the tools and products around them.
+        </p>
+        <div class="hero-tags">
+          <span class="tag">agents</span>
+          <span class="tag">orchestration</span>
+          <span class="tag">ship fast</span>
+        </div>
+      </div>
+    </section>
+
+    <img class="divider" src="assets/divider.svg" alt="" width="900" height="24" loading="lazy">
+
+    <section id="agents" class="section section-agents" aria-labelledby="agents-title">
+      <div class="section-header">
+        <span class="section-label agents-label">01</span>
+        <h2 id="agents-title">Agents</h2>
+        <p class="section-desc">Platforms and patterns where I've designed real agent behavior — not just chat, but action.</p>
+      </div>
+
+      <div class="agents-grid">
+        <article class="agent-card agent-card--featured">
+          <div class="agent-logo-wrap">
+            <img src="assets/logos/muse.svg" alt="Meta Muse" class="agent-logo" width="64" height="64">
+          </div>
+          <div class="agent-body">
+            <h3>Meta Muse</h3>
+            <p class="agent-platform">Meta's personal AI agent — runs in Muse Secure VM, takes action across apps, email, travel, and connected services via Muse Spark.</p>
+            <p class="agent-work">Designed proactive agent flows and connector experiences: background sub-agents, scheduled routines, and permission-aware actions that finish jobs end-to-end instead of stopping at a draft.</p>
+          </div>
+        </article>
+
+        <article class="agent-card agent-card--featured">
+          <div class="agent-logo-wrap">
+            <img src="assets/logos/grokbot.svg" alt="Grok Bot" class="agent-logo" width="64" height="64">
+          </div>
+          <div class="agent-body">
+            <h3>Grok Bot</h3>
+            <p class="agent-platform">xAI's always-on AI teammates — each Bot gets a persistent cloud computer with browser, filesystem, and terminal to work across apps like a human would.</p>
+            <p class="agent-work">Shaped teammate-style UX: parallel Bots that coordinate in group chats, demonstration-learned routines, and handoffs so you're not the router between tools.</p>
+          </div>
+        </article>
+      </div>
+
+      <ul class="agent-highlights" aria-label="Other agent work">
+        <li>
+          <span class="highlight-icon" aria-hidden="true">📞</span>
+          <div>
+            <strong>Phone calling on agents</strong>
+            <span>Voice outbound/inbound so agents can call, confirm, and follow up in the real world.</span>
+          </div>
+        </li>
+        <li>
+          <span class="highlight-icon" aria-hidden="true">↔</span>
+          <div>
+            <strong>Cross-messaging between bots</strong>
+            <span>Bridged agents across platforms so context and tasks pass between different bots cleanly.</span>
+          </div>
+        </li>
+        <li>
+          <span class="highlight-icon" aria-hidden="true">⏱</span>
+          <div>
+            <strong>Routine management</strong>
+            <span>Scheduled and event-driven workflows agents re-run without re-prompting every time.</span>
+          </div>
+        </li>
+        <li>
+          <span class="highlight-icon" aria-hidden="true">◎</span>
+          <div>
+            <strong>Multi-agent orchestration</strong>
+            <span><a href="https://github.com/AuthByte/the-floor2">The Floor</a> committee debates &amp; private Orch layer for coordinating models, tools, and handoffs.</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <img class="divider" src="assets/divider.svg" alt="" width="900" height="24" loading="lazy">
+
+    <section id="tools" class="section section-tools" aria-labelledby="tools-title">
+      <div class="section-header">
+        <span class="section-label tools-label">02</span>
+        <h2 id="tools-title">Tools</h2>
+        <p class="section-desc">The stack I reach for — tied to real projects already shipping.</p>
+      </div>
+
+      <div class="tools-grid">
+        <article class="tool-card">
+          <img src="assets/logos/cursor.svg" alt="Cursor" class="tool-logo" width="40" height="40">
+          <h3>Cursor</h3>
+          <p>Agentic coding home base — rapid prototyping across repos, Orch internals, and <a href="https://github.com/AuthByte/fuzzy-system">BlockLogger</a> dashboard work.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/anthropic.svg" alt="Claude" class="tool-logo" width="40" height="40">
+          <h3>Claude</h3>
+          <p>Multi-agent reasoning for <a href="https://github.com/AuthByte/the-floor2">The Floor</a> investment committee debates and <a href="https://github.com/AuthByte/peptideos">peptideos</a> evidence profiles.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/openai.svg" alt="ChatGPT" class="tool-logo" width="40" height="40">
+          <h3>ChatGPT</h3>
+          <p>Built <a href="https://chat.openai.com/g/g-lyZm7Ef5l-skodegpt-sketch-to-html">SkodeGPT</a> (sketch → HTML) and <a href="https://github.com/AuthByte/dash">Serenity's Picks</a> LLM tweet ingest.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/python.svg" alt="Python" class="tool-logo" width="40" height="40">
+          <h3>Python</h3>
+          <p><a href="https://github.com/AuthByte/analytics">analytics</a> pipelines and <a href="https://github.com/AuthByte/token-price-index">token-price-index</a> pulls from OpenRouter usage data.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/typescript.svg" alt="TypeScript" class="tool-logo" width="40" height="40">
+          <h3>TypeScript</h3>
+          <p>Typed backends and APIs across dashboards — <a href="https://github.com/AuthByte/private-funds">Holdco</a>, peptideos, and pick trackers.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/react.svg" alt="React" class="tool-logo" width="40" height="40">
+          <h3>React</h3>
+          <p>Interactive UIs for fund dashboards, compound research hubs, and generative <a href="https://github.com/AuthByte/wallpaper-maker">wallpaper-maker</a> experiments.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/nextdotjs.svg" alt="Next.js" class="tool-logo" width="40" height="40">
+          <h3>Next.js</h3>
+          <p>Full-stack product shells — SSR, API routes, and deploy-ready apps for the experiments that graduate from prototype.</p>
+        </article>
+
+        <article class="tool-card">
+          <img src="assets/logos/meta.svg" alt="Meta" class="tool-logo" width="40" height="40">
+          <h3>Meta AI</h3>
+          <p>Muse Spark and Model API integrations for agentic workflows with web-search grounding and OpenAI-compatible tooling.</p>
+        </article>
+      </div>
+    </section>
+
+    <img class="divider" src="assets/divider.svg" alt="" width="900" height="24" loading="lazy">
+
+    <section id="projects" class="section section-projects" aria-labelledby="projects-title">
+      <div class="section-header">
+        <span class="section-label projects-label">03</span>
+        <h2 id="projects-title">Projects</h2>
+        <p class="section-desc">Weird little tools, AI experiments, and products that feel like magic when they just work.</p>
+      </div>
+
+      <div class="projects-grid">
+        <a class="project-card" href="https://github.com/AuthByte/the-floor2" target="_blank" rel="noopener noreferrer">
+          <h3>The Floor</h3>
+          <p>After-hours multi-agent investment committee — desk research &amp; committee debate.</p>
         </a>
-        <a href="link-for-gpt2" class="gpt-item">
-            <img src="path-to-your-image/gpt2.jpeg" alt="GPT 2">
-            <span class="gpt-name">GPT 2</span>
+        <div class="project-card project-card--private" aria-label="Orch — private repo">
+          <h3>Orch <span class="lock" aria-label="private repo">🔒</span></h3>
+          <p>Multi-agent orchestration layer for coordinating models, tools, and workflows.</p>
+        </div>
+        <a class="project-card" href="https://github.com/AuthByte/analytics" target="_blank" rel="noopener noreferrer">
+          <h3>analytics</h3>
+          <p>Analytics &amp; data tooling.</p>
         </a>
-        <a href="link-for-gpt3" class="gpt-item">
-            <img src="path-to-your-image/gpt3.jpeg" alt="GPT 3">
-            <span class="gpt-name">GPT 3</span>
+        <a class="project-card" href="https://github.com/AuthByte/token-price-index" target="_blank" rel="noopener noreferrer">
+          <h3>token-price-index</h3>
+          <p>Usage-weighted token price index from OpenRouter's most-used models.</p>
         </a>
-    </div>
+        <a class="project-card" href="https://github.com/AuthByte/private-funds" target="_blank" rel="noopener noreferrer">
+          <h3>Holdco</h3>
+          <p>Dashboard for publicly traded funds that hold private companies.</p>
+        </a>
+        <a class="project-card" href="https://github.com/AuthByte/peptideos" target="_blank" rel="noopener noreferrer">
+          <h3>peptideos</h3>
+          <p>Compound research hub — peptides, supplements, and evidence profiles with AI search.</p>
+        </a>
+        <a class="project-card" href="https://github.com/AuthByte/dash" target="_blank" rel="noopener noreferrer">
+          <h3>Serenity's Picks</h3>
+          <p>Self-hosted stock picks tracker with LLM-driven tweet ingest.</p>
+        </a>
+        <a class="project-card" href="https://github.com/AuthByte/fuzzy-system" target="_blank" rel="noopener noreferrer">
+          <h3>BlockLogger</h3>
+          <p>Minecraft Bedrock block logging add-on with optional hosted dashboard.</p>
+        </a>
+        <a class="project-card" href="https://github.com/AuthByte/wallpaper-maker" target="_blank" rel="noopener noreferrer">
+          <h3>wallpaper-maker</h3>
+          <p>Generative wallpaper tooling &amp; visual experiments.</p>
+        </a>
+        <a class="project-card project-card--gpt" href="https://chat.openai.com/g/g-lyZm7Ef5l-skodegpt-sketch-to-html" target="_blank" rel="noopener noreferrer">
+          <img src="assets/skodegpt.png" alt="" class="project-thumb" width="48" height="48" loading="lazy">
+          <div>
+            <h3>SkodeGPT</h3>
+            <p>Sketch-to-HTML custom GPT — turn wireframes into working markup.</p>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <img class="divider" src="assets/divider.svg" alt="" width="900" height="24" loading="lazy">
+    <p>
+      <span class="footer-code">access_granted ★ stay curious</span><br>
+      built with caffeine · shipped with intention<br>
+      <a href="https://github.com/AuthByte">github.com/AuthByte</a>
+    </p>
+  </footer>
 </body>
 </html>
