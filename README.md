@@ -1,117 +1,71 @@
-<!--
-  AuthByte · GitHub Profile
-  https://authbyte.tech
--->
+# Latch
 
-<div align="center">
+Grant-latched agent mail. This is the AMP **communication** protocol (v0): friends’ agents send messages. It is not a task bus, not autonomy, not [hi.new](https://hi.new/api.md), and not A2A.
 
-  <img src="./assets/banner.png" alt="AuthByte" width="100%" />
+Protocol name: **Latch** (the AMP project name stays AMP; this wire is not Jauganaut/agent-mailer “AMP”).
 
-  <br/><br/>
+Spec: [`docs/amp-mail-spec.md`](docs/amp-mail-spec.md)
+Grok wake routine: [`docs/grok-wake.md`](docs/grok-wake.md)
 
-  <sub><code>shipping weird little tools · auth · ai · product experiments</code></sub>
+## Run the reference server
 
-  <br/>
-  <img src="./assets/divider.svg" alt="" width="100%"/>
+Node 22+.
 
-</div>
-
-<br/>
-
-<p align="center">
-  <b>Hey — I'm AuthByte.</b><br/>
-  I build sharp little products, AI experiments, and tools that feel like magic when they just <i>work</i>.
-</p>
-
-<p align="center">
-  <a href="https://authbyte.tech"><img src="https://img.shields.io/badge/web-authbyte.tech-0a1628?style=for-the-badge&labelColor=020617&color=22d3ee" alt="authbyte.tech"/></a>
-  &nbsp;
-  <a href="https://github.com/AuthByte"><img src="https://img.shields.io/badge/github-AuthByte-0a1628?style=for-the-badge&labelColor=020617&color=34d399" alt="GitHub"/></a>
-  &nbsp;
-  <img src="https://komarev.com/ghpvc/?username=AuthByte&style=for-the-badge&color=22d3ee&label=profile+views" alt="Profile views"/>
-</p>
-
----
-
-### ▸ what I ship
-
-| | project | description |
-|:---:|:---|:---|
-| | [**The Floor**](https://github.com/AuthByte/the-floor2) | After-hours multi-agent investment committee — AI desk research & committee debate |
-| 🔒 | **Orch** | Multi-agent orchestration layer for coordinating models, tools, and workflows |
-| | [**analytics**](https://github.com/AuthByte/analytics) | Analytics & data tooling |
-| | [**token-price-index**](https://github.com/AuthByte/token-price-index) | Usage-weighted token price index from OpenRouter's most-used models |
-| | [**Holdco**](https://github.com/AuthByte/private-funds) | Dashboard for publicly traded funds that hold private companies (RVI, DXYZ, ARKVX…) |
-| | [**peptideos**](https://github.com/AuthByte/peptideos) | Compound research hub — peptides, supplements, and evidence profiles with AI search |
-| | [**Serenity's Picks**](https://github.com/AuthByte/dash) | Self-hosted stock picks tracker with LLM-driven tweet ingest |
-| | [**BlockLogger**](https://github.com/AuthByte/fuzzy-system) | Minecraft Bedrock block logging add-on with optional hosted dashboard |
-| | [**wallpaper-maker**](https://github.com/AuthByte/wallpaper-maker) | Generative wallpaper tooling & visual experiments |
-
-<sub>🔒 = private repo — listed here even when the code isn't public</sub>
-
-<div align="center">
-
-| ⚡ focus | 🧪 vibe | 🌙 mode |
-|:---:|:---:|:---:|
-| product + AI | ship fast, polish later | late-night builds |
-
-</div>
-
----
-
-### ▸ stack I reach for
-
-<p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-020617?style=for-the-badge&logo=typescript&logoColor=22d3ee" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Python-020617?style=for-the-badge&logo=python&logoColor=34d399" alt="Python"/>
-  <img src="https://img.shields.io/badge/React-020617?style=for-the-badge&logo=react&logoColor=67e8f9" alt="React"/>
-  <img src="https://img.shields.io/badge/Next.js-020617?style=for-the-badge&logo=nextdotjs&logoColor=e2e8f0" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/Node.js-020617?style=for-the-badge&logo=nodedotjs&logoColor=34d399" alt="Node.js"/>
-  <img src="https://img.shields.io/badge/HTML5-020617?style=for-the-badge&logo=html5&logoColor=f97316" alt="HTML"/>
-  <img src="https://img.shields.io/badge/CSS3-020617?style=for-the-badge&logo=css3&logoColor=22d3ee" alt="CSS"/>
-</p>
-
----
-
-### ▸ github pulse
-
-<div align="center">
-  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=AuthByte&theme=radical" alt="Profile details"/>
-  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=AuthByte&theme=radical" alt="Top languages"/>
-</div>
-
-<br/>
-
-<div align="center">
-  <img src="https://streak-stats.demolab.com/?user=AuthByte&theme=radical&hide_border=true&background=020617&ring=22d3ee&fire=34d399&currStreakLabel=67e8f9" alt="GitHub streak" width="100%"/>
-</div>
-
----
-
-### ▸ currently in the lab
-
-```diff
-+ inventing new ways to turn ideas into working software
-+ exploring AI tooling that feels useful, not noisy
-+ polishing authbyte.tech into something worth bookmarking
-- waiting for perfect conditions to ship
+```bash
+npm install
+npm test
+npm run dev          # http://127.0.0.1:8787
 ```
 
----
+Health: `GET /v0/health` → `{ "ok": true, "protocol": "latch", "v": 0 }`.
 
-<div align="center">
+In-memory store: restart forgets queued mail (on-brand). Unread TTL is 7 days; ack deletes the payload immediately. Opt-in retention is off.
 
-  <img src="./assets/divider.svg" alt="" width="100%"/>
+## CLI
 
-  <br/><br/>
+Credentials land in `./.latch.json` if you run from this directory, otherwise `~/.latch/credentials.json` (mode 600). Override with `LATCH_URL` and `LATCH_CREDS`.
 
-  <sub>
-    built with caffeine · shipped with intention ·
-    <a href="https://authbyte.tech">authbyte.tech</a>
-  </sub>
+```bash
+# two shells / two cred files
+LATCH_CREDS=./.latch-a.json npx tsx src/cli.ts claim nebula
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts claim friend-bot
 
-  <br/><br/>
+LATCH_CREDS=./.latch-a.json npx tsx src/cli.ts invite
+# paste token:
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts redeem lti_…
 
-  <code>access_granted ★ stay curious</code>
+LATCH_CREDS=./.latch-a.json npx tsx src/cli.ts send friend-bot --body "venue changed, 6pm"
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts inbox          # headers only
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts open msg_…
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts ack msg_…
 
-</div>
+LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts notify http://127.0.0.1:9999/wake --secret "$HMAC_SECRET"
+```
+
+`claim` also generates and publishes Ed25519 + age keys. `send` encrypts when the peer’s grant pin has an age key.
+
+### Commands
+
+| Command | API |
+| --- | --- |
+| `claim <handle>` | `POST /v0/handles/claim` + key publish |
+| `recover <handle> --secret` | `POST /v0/handles/recover` |
+| `keygen` | `POST /v0/keys/signing` and `/v0/keys/age` |
+| `whoami` | `GET /v0/handles/me` |
+| `invite [--note]` | `POST /v0/invites` |
+| `redeem <token>` | `POST /v0/invites/:token/redeem` |
+| `grants` | `GET /v0/grants` |
+| `send <to> --body` | `POST /v0/messages` |
+| `inbox` | `GET /v0/inbox/headers` |
+| `open <id>` | `GET /v0/inbox/:id` |
+| `ack <id>` | `POST /v0/inbox/:id/ack` |
+| `notify <url> --secret` | `PUT /v0/notifications` |
+| `notify-clear` | `DELETE /v0/notifications` |
+
+If a webhook is connected, **do not cron-poll** `inbox`. See the Grok routine.
+
+## What v0 will not do
+
+No task lifecycle, capability cards, A2A/hi.new bridges, billing, names marketplace, or autonomous tool execution. Hosting (self-host vs public) waits until the wire is locked and dogfood starts.
+
+AuthByte’s old profile landing lived in this repo; the page is now a Latch primer. The GitHub profile README is this file so the protocol can actually be run.
