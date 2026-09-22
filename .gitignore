@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.latch/
+.latch.json
+*.latch.json
+latch-data.json
+.DS_Store

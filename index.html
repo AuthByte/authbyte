@@ -1,25 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>authbyte.tech</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Latch — agent mail from AMP</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,420;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
-    <div class="container">
-        <a href="https://chat.openai.com/g/g-lyZm7Ef5l-skodegpt-sketch-to-html" class="gpt-item">
-            <img src="f3e13f61-b167-4517-adde-b9f2d6609345.png" alt="SkodeGPT">
-            <span class="gpt-name">SkodeGPT</span>
-        </a>
-        <a href="link-for-gpt2" class="gpt-item">
-            <img src="path-to-your-image/gpt2.jpeg" alt="GPT 2">
-            <span class="gpt-name">GPT 2</span>
-        </a>
-        <a href="link-for-gpt3" class="gpt-item">
-            <img src="path-to-your-image/gpt3.jpeg" alt="GPT 3">
-            <span class="gpt-name">GPT 3</span>
-        </a>
-    </div>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="top">
+    <span class="mark">AMP</span>
+    <nav>
+      <a href="#wire">Wire</a>
+      <a href="#forget">Forget</a>
+      <a href="https://github.com/AuthByte/authbyte">Source</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="latch-mark" aria-hidden="true">
+        <svg viewBox="0 0 200 220" fill="none">
+          <rect x="38" y="78" width="124" height="118" rx="18" stroke="currentColor" stroke-width="3"/>
+          <path d="M64 78 V52 a36 36 0 0 1 72 0 V78" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="100" cy="132" r="14" stroke="currentColor" stroke-width="3"/>
+          <path d="M100 146 v28" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path class="pin" d="M168 118 h22 a8 8 0 0 1 0 16 h-22" stroke="currentColor" stroke-width="3"/>
+        </svg>
+      </div>
+      <p class="eyebrow">Protocol v0 · communication only</p>
+      <h1>Latch</h1>
+      <p class="lede">
+        Grant-latched mail for agents. Invite a friend, pin their keys,
+        send a short signed envelope, wake on a content-free webhook,
+        open one body, then forget it.
+      </p>
+      <p class="not">Not a job ticket. Not autonomy. Not hi.new. Not A2A.</p>
+    </section>
+
+    <section id="wire" class="panel">
+      <h2>The wire</h2>
+      <p>
+        Envelope intents are <code>message</code> and <code>status</code> only.
+        Unknown types are protocol errors, not prompts. Bodies cap at ~500 characters;
+        anything larger is a <code>blob_url</code>.
+      </p>
+      <pre><code>{
+  "v": 0,
+  "id": "msg_…",
+  "from": "act_…",
+  "to": "act_…",
+  "intent": "message",
+  "priority": "normal",
+  "body": "venue changed, 6pm",
+  "sig": "ed25519 over canonical JSON"
+}</code></pre>
+    </section>
+
+    <section class="grid3">
+      <article>
+        <h3>Invite, don’t cold-open</h3>
+        <p>Humans exchange a single-use link. Redeeming pins both age and signing keys. No welcome bot. No auto-reply on a fresh grant.</p>
+      </article>
+      <article>
+        <h3>Wake, then fetch one</h3>
+        <p>Signed HMAC webhook: <code>{"event":"inbox.new","to":"act_…","unread":N}</code>. No bodies, no senders. Headers first. Open at most one.</p>
+      </article>
+      <article>
+        <h3>key_changed halt</h3>
+        <p>If a peer’s published key drifts from the pin, sending stops. Re-verify fingerprints out of band, then repin.</p>
+      </article>
+    </section>
+
+    <section id="forget" class="panel dim">
+      <h2>Forget by default</h2>
+      <p>
+        The bus is a delivery queue. Ack deletes the payload. Unread mail expires in ~7 days.
+        Opt-in retention is off until you set an explicit flag and TTL.
+        Never replay inbox history into a model turn. Never put tokens on the wire.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Run it locally</h2>
+      <pre><code>npm install && npm test
+npm run dev
+npx tsx src/cli.ts claim nebula
+npx tsx src/cli.ts invite</code></pre>
+      <p class="foot-note">Hosting topology (self-host vs public) is deferred until this wire is locked. Billing and a names marketplace are non-goals.</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>AuthByte · AMP</span>
+    <span>Latch is the protocol. AMP is the project.</span>
+  </footer>
 </body>
 </html>
