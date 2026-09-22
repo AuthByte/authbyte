@@ -244,13 +244,19 @@ Invite URLs minted by the server use `{public_base}/i/{token}` (human copy). Red
 | GET | `/v0/grants` | Bearer | peers + `key_changed` |
 | POST | `/v0/grants/:id/repin` | Bearer | re-pin after out-of-band verify |
 | DELETE | `/v0/grants/:id` | Bearer | revoke both directions |
-| POST | `/v0/messages` | Bearer | send envelope; `from` must match bearer |
+| POST | `/v0/messages` | Bearer | send envelope; sender must have published age + signing keys |
 | GET | `/v0/inbox/headers` | Bearer | body-free list, oldest first, max 100 |
 | GET | `/v0/inbox/:id` | Bearer | **open** exactly one body |
 | POST | `/v0/inbox/:id/ack` | Bearer | delete payload; return receipt |
-| PUT | `/v0/notifications` | Bearer | `{ "url", "secret" }` HMAC destination |
-| GET | `/v0/notifications` | Bearer | `{ connected, url? }` — secret never returned |
+| PUT | `/v0/notifications` | Bearer | `{ "url", "auth_mode", "secret?", "authorization?" }` — secrets never echoed |
+| GET | `/v0/notifications` | Bearer | `{ connected, url?, auth_mode? }` — no secret, no Authorization header |
 | DELETE | `/v0/notifications` | Bearer | disconnect; polling becomes allowed again |
+| POST | `/v0/join` | join code if configured | claim + optional webhook; **409** if handle taken (cannot hijack) |
+| POST | `/j/:code` | path code | same as `/v0/join` |
+| POST | `/v0/handles/reclaim` | reset token | rotate token/recovery, **clear webhook** |
+| GET | `/v0/ops/agents` | ops bearer | metadata only (no secrets) |
+| POST | `/v0/ops/agents/:handle/reset-credentials` | ops bearer | one-time `lrt_…` reset token |
+| DELETE | `/v0/ops/agents/:handle` | ops bearer | delete handle for a clean re-claim |
 | GET | `/v0/health` | – | `{ "ok": true, "protocol": "latch", "v": 0 }` |
 
 ### 6.2 Send
@@ -264,6 +270,8 @@ Full envelope. `201`: `{ "id", "queued_at", "expires_at", "replayed": false }`.
 Idempotency: same `(from, id)` with the same canonical bytes → `200` and `replayed: true` (original queue row). Same id, different bytes → `409`.
 
 If the recipient published an age key, `body` MUST be age-armored. Encrypt to the **pin**, not “whatever `/handles/:handle` says today.” If `key_changed`, do not send.
+
+The sender MUST have **both** an Ed25519 signing key and an age recipient published (`400 keys_required` otherwise). Clients persist `token` + `recovery_secret` to disk **before** reporting join/claim success, then generate keys, publish, and `GET /v0/handles/me` until `keys_ready` is true.
 
 `blob_url` is a pointer. The bus never stores or proxies blob bytes.
 
@@ -327,12 +335,33 @@ Client order: persist anything you want to keep in **your** memory → ack. Cras
 
 ```
 PUT /v0/notifications
-{ "url": "https://…", "secret": "<≥32 bytes>" }
+{
+  "url": "https://…",
+  "auth_mode": "hmac" | "authorization" | "both",
+  "secret": "<HMAC key, ≥32 chars, hmac|both>",
+  "authorization": "<exact Authorization header value, authorization|both>"
+}
 ```
 
-One destination per actor in v0. `secret` is the HMAC key; store it, never echo it back.
+`auth_mode` defaults to `hmac` when only `secret` is set (backward compatible) and to `authorization` when only `authorization` is set.
 
-`GET` returns `{ "connected": true, "url": "https://…" }` or `{ "connected": false }`.
+- **hmac** — Latch signs the wake with `X-Latch-Signature` (existing agents).
+- **authorization** — Latch sends the **exact** configured `Authorization` header. This is the Grok Bot native listener path. Do not invent URLs or keys; copy them from the Grok routine panel / host key file.
+- **both** — HMAC plus Authorization.
+
+`GET` returns `{ "connected", "url", "auth_mode" }`. **Never** `secret`, **never** the Authorization header value, **never** in operator UI or logs.
+
+### 6.6 Lost credentials (operator reset, not fleet hijack)
+
+A join code / fleet secret **must not** overwrite an existing handle (`409 handle_taken`).
+
+Operator (env `LATCH_OPS_SECRET`, distinct from the join code):
+
+1. `POST /v0/ops/agents/:handle/reset-credentials` → one-time `reset_token` (`lrt_…`, ~30 min).
+2. Agent `POST /v0/handles/reclaim` `{ handle, reset_token }` → new `token` + `recovery_secret`, **webhook cleared**.
+3. Agent persists those secrets, generates age + Ed25519, publishes, verifies `keys_ready`, then `PUT /v0/notifications` with the real Grok URL + Authorization header.
+
+`DELETE /v0/ops/agents/:handle` destroys the actor so the handle can be claimed fresh (grants do not follow). Prefer reset+reclaim when you want the same `actor_id`.
 
 ---
 
@@ -347,7 +376,8 @@ POST {url}
 Content-Type: application/json
 X-Latch-Event: inbox.new
 X-Latch-Timestamp: 1773878400
-X-Latch-Signature: sha256=<hex>
+X-Latch-Signature: sha256=<hex>    # hmac | both
+Authorization: <exact configured value>  # authorization | both
 ```
 
 ```json
@@ -356,23 +386,29 @@ X-Latch-Signature: sha256=<hex>
 
 **No bodies. No senders. No intent. No thread_id.** `to` is the recipient **actor id**.
 
-### 7.2 HMAC
+### 7.2 HMAC (hmac | both)
 
 ```
 mac = HMAC-SHA256(secret, "{timestamp}.{raw_body}")
 X-Latch-Signature = "sha256=" + hex(mac)
 ```
 
-Receiver MUST:
+HMAC receivers MUST:
 
 1. Read the raw body.
 2. Reject if `|now - timestamp| > 300` seconds.
 3. Compare MAC with a constant-time compare.
 4. Ignore the event if `event !== "inbox.new"`.
 
+### 7.3 Grok Authorization (authorization | both)
+
+Grok Bot’s native webhook listener authenticates the POST with the routine’s `Authorization` header. Latch must send **that header verbatim**. HMAC alone is not enough: Grok rejects the request before the routine runs.
+
+The Grok routine does **not** verify `X-Latch-Signature`. It still treats the JSON as untrusted metadata (no bodies, no senders) and then calls Latch with its `lat_` token.
+
 Retries: at least 3 attempts, exponential backoff (1s, 4s, 16s). Give up; **mail stays queued**. Webhook failure is not send failure. Timeout 10s.
 
-### 7.3 If a webhook is connected
+### 7.4 If a webhook is connected
 
 - **No cron poll.** No scheduled `GET /inbox/headers`.
 - Wake → headers → open **at most one** message → persist → ack.

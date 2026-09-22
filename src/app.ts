@@ -6,23 +6,34 @@ import {
   BODY_AGE_BYTES,
   BODY_PLAIN_CAP,
   HMAC_SECRET_MIN,
+  AUTHORIZATION_MIN,
   PROTOCOL,
   RETENTION_TTL_MAX,
   RETENTION_TTL_MIN,
   WIRE_VERSION,
   isAgeArmored,
+  isAuthMode,
   isIntent,
   isPriority,
+  type AuthMode,
   type Envelope,
 } from "./types.js";
 import { codeOf, MemoryStore, type Actor } from "./store.js";
-import { dispatchInboxNew, type FetchLike } from "./webhooks.js";
+import {
+  dispatchInboxNew,
+  publicWebhookView,
+  type FetchLike,
+  type WebhookDest,
+} from "./webhooks.js";
+import { timingSafeEqual } from "node:crypto";
 
 export type AppOptions = {
   store: MemoryStore;
   publicBase?: string;
   fetchImpl?: FetchLike;
   webhookRetries?: number;
+  opsSecret?: string;
+  joinCode?: string;
 };
 
 type ErrStatus = 400 | 401 | 403 | 404 | 409 | 410 | 413;
@@ -40,6 +51,77 @@ function bearer(c: { req: { header: (n: string) => string | undefined } }): stri
   const h = c.req.header("authorization") ?? "";
   const m = /^Bearer\s+(\S+)/i.exec(h);
   return m ? m[1] : null;
+}
+
+function opsAuth(
+  c: { req: { header: (n: string) => string | undefined }; json: (x: unknown, s?: ErrStatus) => Response },
+  opsSecret?: string,
+): true | Response {
+  if (!opsSecret) {
+    return fail(c, 401, "ops_disabled", "Operator API is not configured on this host.");
+  }
+  const token = bearer(c);
+  if (!token) return fail(c, 401, "unauthorized", "Missing operator bearer.");
+  const a = Buffer.from(token);
+  const b = Buffer.from(opsSecret);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    return fail(c, 401, "unauthorized", "Bad operator credential.");
+  }
+  return true;
+}
+
+function parseWebhookDest(body: {
+  url?: string;
+  secret?: string;
+  authorization?: string;
+  auth_mode?: string;
+  webhook_url?: string;
+  webhook_secret?: string;
+  webhook_auth_mode?: string;
+  webhook_authorization?: string;
+}): WebhookDest | { error: string; hint: string } {
+  const url = (body.url ?? body.webhook_url ?? "").trim();
+  const secret = body.secret ?? body.webhook_secret;
+  const authorization = body.authorization ?? body.webhook_authorization;
+  let authMode: AuthMode | undefined = isAuthMode(body.auth_mode)
+    ? body.auth_mode
+    : isAuthMode(body.webhook_auth_mode)
+      ? body.webhook_auth_mode
+      : undefined;
+  if (!authMode) {
+    if (authorization && !secret) authMode = "authorization";
+    else authMode = "hmac";
+  }
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:" && u.protocol !== "http:") {
+      return { error: "invalid_url", hint: "Webhook URL must be http(s)." };
+    }
+  } catch {
+    return { error: "invalid_url", hint: "Webhook URL must be http(s)." };
+  }
+  if (authMode === "hmac" || authMode === "both") {
+    if (!secret || secret.length < HMAC_SECRET_MIN) {
+      return {
+        error: "weak_secret",
+        hint: "HMAC mode needs webhook_secret of at least 32 characters.",
+      };
+    }
+  }
+  if (authMode === "authorization" || authMode === "both") {
+    if (!authorization || authorization.length < AUTHORIZATION_MIN) {
+      return {
+        error: "authorization_required",
+        hint: "authorization mode needs the exact Authorization header value Grok will expect.",
+      };
+    }
+  }
+  const dest: WebhookDest = { url, authMode };
+  if (authMode === "hmac" || authMode === "both") dest.secret = secret;
+  if (authMode === "authorization" || authMode === "both") {
+    dest.authorization = authorization;
+  }
+  return dest;
 }
 
 export function createApp(opts: AppOptions): Hono {
@@ -338,12 +420,12 @@ export function createApp(opts: AppOptions): Hono {
     if (env.from !== actor.actorId) {
       return fail(c, 403, "from_mismatch", "Envelope from must match the bearer actor.");
     }
-    if (!actor.signingPublicKey) {
+    if (!actor.signingPublicKey || !actor.agePublicKey) {
       return fail(
         c,
         400,
-        "signing_key_required",
-        "Publish an Ed25519 key before sending.",
+        "keys_required",
+        "Publish Ed25519 and age keys before sending. Persist token and recovery_secret first.",
       );
     }
     const canonical = canonicalEnvelope({
@@ -410,8 +492,7 @@ export function createApp(opts: AppOptions): Hono {
         if (dest) {
           try {
             await dispatchInboxNew({
-              url: dest.url,
-              secret: dest.secret,
+              dest,
               to: recipient.actorId,
               unread: store.unreadCount(recipient.actorId),
               now: store.now,
@@ -487,30 +568,25 @@ export function createApp(opts: AppOptions): Hono {
   app.put("/v0/notifications", async (c) => {
     const actor = auth(c);
     if (actor instanceof Response) return actor;
-    const body = await readJson<{ url?: string; secret?: string }>(c);
+    const body = await readJson<{
+      url?: string;
+      secret?: string;
+      authorization?: string;
+      auth_mode?: string;
+    }>(c);
     if (body instanceof Response) return body;
-    const url = body.url ?? "";
-    const secret = body.secret ?? "";
-    try {
-      const u = new URL(url);
-      if (u.protocol !== "https:" && u.protocol !== "http:") {
-        return fail(c, 400, "invalid_url", "Webhook URL must be http(s).");
-      }
-    } catch {
-      return fail(c, 400, "invalid_url", "Webhook URL must be http(s).");
+    const dest = parseWebhookDest(body);
+    if ("error" in dest) {
+      return fail(c, 400, dest.error, dest.hint);
     }
-    if (secret.length < HMAC_SECRET_MIN) {
-      return fail(c, 400, "weak_secret", "HMAC secret must be at least 32 characters.");
-    }
-    store.setWebhook(actor, url, secret);
-    return c.json({ connected: true, url });
+    store.setWebhook(actor, dest);
+    return c.json(publicWebhookView(actor.webhook));
   });
 
   app.get("/v0/notifications", (c) => {
     const actor = auth(c);
     if (actor instanceof Response) return actor;
-    if (!actor.webhook) return c.json({ connected: false });
-    return c.json({ connected: true, url: actor.webhook.url });
+    return c.json(publicWebhookView(actor.webhook));
   });
 
   app.delete("/v0/notifications", (c) => {
@@ -518,6 +594,147 @@ export function createApp(opts: AppOptions): Hono {
     if (actor instanceof Response) return actor;
     store.clearWebhook(actor);
     return c.json({ connected: false });
+  });
+
+  const handleJoin = async (c: {
+    req: { json: () => Promise<unknown>; param: (n: string) => string };
+    json: (x: unknown, s?: 201 | ErrStatus) => Response;
+  }) => {
+    let body: {
+      handle?: string;
+      webhook_url?: string;
+      webhook_secret?: string;
+      webhook_auth_mode?: string;
+      webhook_authorization?: string;
+      join_code?: string;
+    };
+    try {
+      body = (await c.req.json()) as typeof body;
+    } catch {
+      return fail(c, 400, "invalid_json", "JSON body required.");
+    }
+    if (opts.joinCode) {
+      const provided = body.join_code ?? c.req.param("code");
+      if (provided !== opts.joinCode) {
+        return fail(c, 401, "bad_join_code", "Join code did not match.");
+      }
+    }
+    const handle = (body.handle ?? "").trim().toLowerCase();
+    if (store.byHandle(handle)) {
+      return fail(
+        c,
+        409,
+        "handle_taken",
+        "That handle is claimed. Join code cannot hijack it. Operator must issue a one-time reset token.",
+      );
+    }
+    let dest: WebhookDest | undefined;
+    if (body.webhook_url) {
+      const parsed = parseWebhookDest(body);
+      if ("error" in parsed) return fail(c, 400, parsed.error, parsed.hint);
+      dest = parsed;
+    }
+    try {
+      const { actor, token, recovery_secret } = store.claim(handle);
+      if (dest) store.setWebhook(actor, dest);
+      return c.json(
+        {
+          actor_id: actor.actorId,
+          handle: actor.handle,
+          token,
+          recovery_secret,
+          webhook: publicWebhookView(actor.webhook),
+          warning:
+            "Store token and recovery_secret now, then generate and publish age + Ed25519 keys before sending. Secrets are shown once.",
+        },
+        201,
+      );
+    } catch (err) {
+      const code = codeOf(err);
+      if (code === "invalid_handle") {
+        return fail(
+          c,
+          400,
+          "invalid_handle",
+          "3–32 chars, lowercase a-z 0-9, single hyphens inside.",
+        );
+      }
+      if (code === "handle_taken") {
+        return fail(
+          c,
+          409,
+          "handle_taken",
+          "That handle is claimed. Join code cannot hijack it. Operator must issue a one-time reset token.",
+        );
+      }
+      throw err;
+    }
+  };
+  app.post("/v0/join", handleJoin);
+  app.post("/j/:code", handleJoin);
+
+  app.post("/v0/handles/reclaim", async (c) => {
+    let body: { handle?: string; reset_token?: string };
+    try {
+      body = await c.req.json();
+    } catch {
+      return fail(c, 400, "invalid_json", "JSON body required.");
+    }
+    const handle = (body.handle ?? "").trim().toLowerCase();
+    const result = store.reclaim(handle, body.reset_token ?? "");
+    if (!result) {
+      return fail(
+        c,
+        401,
+        "reclaim_failed",
+        "Reset token invalid, spent, expired, or handle mismatch.",
+      );
+    }
+    return c.json({
+      actor_id: result.actor.actorId,
+      handle: result.actor.handle,
+      token: result.token,
+      recovery_secret: result.recovery_secret,
+      webhook: publicWebhookView(result.actor.webhook),
+      warning:
+        "Previous token and webhook are void. Store these secrets, generate keys, then PUT /v0/notifications.",
+    });
+  });
+
+  app.get("/v0/ops/agents", (c) => {
+    const ok = opsAuth(c, opts.opsSecret);
+    if (ok instanceof Response) return ok;
+    return c.json({ agents: store.listAgentsPublic() });
+  });
+
+  app.post("/v0/ops/agents/:handle/reset-credentials", (c) => {
+    const ok = opsAuth(c, opts.opsSecret);
+    if (ok instanceof Response) return ok;
+    try {
+      const issued = store.issueReset(c.req.param("handle").toLowerCase());
+      return c.json({
+        handle: issued.actor.handle,
+        reset_token: issued.reset_token,
+        expires_at: new Date(issued.expires_at).toISOString(),
+        warning:
+          "One-time reset token. Give it to the agent out of band. It does not restore the old token. Webhook is cleared on reclaim.",
+      });
+    } catch (err) {
+      if (codeOf(err) === "not_found") {
+        return fail(c, 404, "not_found", "No actor with that handle.");
+      }
+      throw err;
+    }
+  });
+
+  app.delete("/v0/ops/agents/:handle", (c) => {
+    const ok = opsAuth(c, opts.opsSecret);
+    if (ok instanceof Response) return ok;
+    const handle = c.req.param("handle").toLowerCase();
+    if (!store.deleteHandle(handle)) {
+      return fail(c, 404, "not_found", "No actor with that handle.");
+    }
+    return c.json({ deleted: true, handle });
   });
 
   return app;
@@ -531,6 +748,8 @@ function meJson(actor: Actor, store: MemoryStore) {
     signing_public_key: actor.signingPublicKey ?? null,
     retention: actor.retention,
     webhook_connected: Boolean(actor.webhook),
+    webhook: publicWebhookView(actor.webhook),
+    keys_ready: Boolean(actor.agePublicKey && actor.signingPublicKey),
   };
 }
 

@@ -31,6 +31,7 @@ export const prefixes = {
   invite: "lti_",
   token: "lat_",
   recovery: "lrs_",
+  reset: "lrt_",
 } as const;
 
 export function actorId(now?: number): string {
@@ -55,6 +56,10 @@ export function bearerToken(): string {
 
 export function recoverySecret(): string {
   return prefixes.recovery + randomBytes(24).toString("hex");
+}
+
+export function resetToken(): string {
+  return prefixes.reset + randomBytes(24).toString("hex");
 }
 
 export const HANDLE_RE = /^(?=.{3,32}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;

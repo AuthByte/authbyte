@@ -8,6 +8,15 @@ export const WEBHOOK_SKEW_S = 300;
 export const RETENTION_TTL_MIN = 3600;
 export const RETENTION_TTL_MAX = 7_776_000;
 export const HMAC_SECRET_MIN = 32;
+export const AUTHORIZATION_MIN = 16;
+export const RESET_TTL_MS = 30 * 60 * 1000;
+
+export const AUTH_MODES = ["hmac", "authorization", "both"] as const;
+export type AuthMode = (typeof AUTH_MODES)[number];
+
+export function isAuthMode(v: unknown): v is AuthMode {
+  return v === "hmac" || v === "authorization" || v === "both";
+}
 export const AGE_ARMOR_HEAD = "-----BEGIN AGE ENCRYPTED FILE-----";
 
 export const INTENTS = ["message", "status"] as const;

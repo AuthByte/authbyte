@@ -5,11 +5,14 @@ import {
   HANDLE_RE,
   inviteToken,
   recoverySecret,
+  resetToken,
 } from "./ids.js";
 import { sha256hex } from "./crypto.js";
 import {
   INVITE_TTL_MS,
+  RESET_TTL_MS,
   UNREAD_TTL_MS,
+  type AuthMode,
   type Envelope,
   type GrantView,
   type InboxHeader,
@@ -18,6 +21,7 @@ import {
   type Receipt,
   isAgeArmored,
 } from "./types.js";
+import type { WebhookDest } from "./webhooks.js";
 
 export type Retention = {
   enabled: boolean;
@@ -33,7 +37,7 @@ export type Actor = {
   signingPublicKey?: string;
   retention: Retention;
   createdAt: number;
-  webhook?: { url: string; secret: string };
+  webhook?: WebhookDest;
 };
 
 export type Invite = {
@@ -77,6 +81,13 @@ export class MemoryStore {
   messages = new Map<string, StoredMessage>();
   /** from+id → message id */
   idempotency = new Map<string, string>();
+  resetTickets = new Map<string, {
+    tokenHash: string;
+    handle: string;
+    actorId: string;
+    expiresAt: number;
+    spent: boolean;
+  }>();
 
   constructor(public now: Clock = () => Date.now()) {}
 
@@ -408,12 +419,86 @@ export class MemoryStore {
     };
   }
 
-  setWebhook(actor: Actor, url: string, secret: string): void {
-    actor.webhook = { url, secret };
+  setWebhook(actor: Actor, dest: WebhookDest): void {
+    actor.webhook = dest;
   }
 
   clearWebhook(actor: Actor): void {
     delete actor.webhook;
+  }
+
+  issueReset(handle: string): { actor: Actor; reset_token: string; expires_at: number } {
+    const actor = this.byHandle(handle);
+    if (!actor) {
+      throw Object.assign(new Error("not_found"), { code: "not_found" });
+    }
+    const raw = resetToken();
+    const expiresAt = this.now() + RESET_TTL_MS;
+    this.resetTickets.set(sha256hex(raw), {
+      tokenHash: sha256hex(raw),
+      handle: actor.handle,
+      actorId: actor.actorId,
+      expiresAt,
+      spent: false,
+    });
+    return { actor, reset_token: raw, expires_at: expiresAt };
+  }
+
+  reclaim(handle: string, resetRaw: string): { actor: Actor; token: string; recovery_secret: string } | null {
+    const ticket = this.resetTickets.get(sha256hex(resetRaw));
+    if (!ticket || ticket.spent) return null;
+    if (ticket.expiresAt <= this.now()) return null;
+    if (ticket.handle !== handle) return null;
+    const actor = this.actors.get(ticket.actorId);
+    if (!actor) return null;
+    this.actorsByTokenHash.delete(actor.tokenHash);
+    const token = bearerToken();
+    const recovery_secret = recoverySecret();
+    actor.tokenHash = sha256hex(token);
+    actor.recoveryHash = sha256hex(recovery_secret);
+    this.actorsByTokenHash.set(actor.tokenHash, actor.actorId);
+    delete actor.webhook;
+    ticket.spent = true;
+    return { actor, token, recovery_secret };
+  }
+
+  deleteHandle(handle: string): boolean {
+    const actor = this.byHandle(handle);
+    if (!actor) return false;
+    this.actorsByTokenHash.delete(actor.tokenHash);
+    this.actorsByHandle.delete(actor.handle);
+    this.actors.delete(actor.actorId);
+    for (const [key, g] of this.grants) {
+      if (g.a === actor.actorId || g.b === actor.actorId) {
+        g.revoked = true;
+        this.grants.delete(key);
+      }
+    }
+    return true;
+  }
+
+  listAgentsPublic(): Array<{
+    handle: string;
+    actor_id: string;
+    webhook_connected: boolean;
+    webhook_url?: string;
+    auth_mode?: AuthMode;
+    age_published: boolean;
+    signing_published: boolean;
+    keys_ready: boolean;
+  }> {
+    return [...this.actors.values()]
+      .sort((a, b) => a.handle.localeCompare(b.handle))
+      .map((a) => ({
+        handle: a.handle,
+        actor_id: a.actorId,
+        webhook_connected: Boolean(a.webhook),
+        webhook_url: a.webhook?.url,
+        auth_mode: a.webhook?.authMode,
+        age_published: Boolean(a.agePublicKey),
+        signing_published: Boolean(a.signingPublicKey),
+        keys_ready: Boolean(a.agePublicKey && a.signingPublicKey),
+      }));
   }
 }
 

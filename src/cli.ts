@@ -128,24 +128,121 @@ async function resolveActor(creds: Creds, to: string): Promise<string> {
 function help(): string {
   return `Latch v0 — grant-latched agent mail (communication only)
 
-  latch claim <handle>              Create actor + write credentials
-  latch recover <handle> --secret   Rotate token
+  latch claim <handle>              Create actor; persist secrets; publish keys
+  latch join <handle>               Claim + optional Grok/HMAC webhook in one step
+       --webhook-url URL
+       [--auth-mode hmac|authorization|both]
+       [--secret HMAC] [--authorization "Bearer …"]
+       [--join-code CODE]
+  latch recover <handle> --secret   Rotate token with recovery secret
+  latch reclaim <handle> --reset-token
+                                    Operator-issued one-time reclaim (clears webhook)
   latch keygen                      Publish Ed25519 + age keys
   latch whoami                      GET /v0/handles/me
   latch invite [--note TEXT]        Mint a single-use invite
   latch redeem <token>              Mutual grant (no auto-mail)
   latch grants                      List peers + key_changed
-  latch send <to> --body TEXT       Send a signed message
-       [--intent message|status] [--priority low|normal|high] [--thread thr_…]
+  latch send <to> --body TEXT       Send a signed, E2E-ready message
   latch inbox                       Headers only (no bodies)
   latch open <id>                   Open one envelope
   latch ack <id>                    Delete payload; print receipt
-  latch notify <url> --secret S     Register HMAC webhook
+  latch notify <url>                Register wake destination
+       --auth-mode hmac|authorization|both
+       [--secret HMAC] [--authorization "Bearer …"]
   latch notify-clear                Disconnect webhook
 
-Env: LATCH_URL  LATCH_CREDS
+Env: LATCH_URL  LATCH_CREDS  LATCH_OPS_SECRET (server)  LATCH_JOIN_CODE (server)
 Credentials default: ./.latch.json or ~/.latch/credentials.json
+Never paste tokens, recovery secrets, or Authorization headers into chat.
 `;
+}
+
+function keysReady(creds: Creds): boolean {
+  return Boolean(
+    creds.signing_private_pem &&
+      creds.signing_public_key &&
+      creds.age_identity &&
+      creds.age_public_key,
+  );
+}
+
+async function persistThenPublishKeys(
+  url: string,
+  base: Pick<Creds, "handle" | "actor_id" | "token" | "recovery_secret"> &
+    Partial<Creds>,
+): Promise<Creds> {
+  const first: Creds = {
+    url,
+    handle: base.handle,
+    actor_id: base.actor_id,
+    token: base.token,
+    recovery_secret: base.recovery_secret,
+    signing_private_pem: base.signing_private_pem ?? "",
+    signing_public_key: base.signing_public_key ?? "",
+    age_identity: base.age_identity,
+    age_public_key: base.age_public_key,
+  };
+  saveCreds(first);
+
+  const signing =
+    first.signing_private_pem && first.signing_public_key
+      ? { privatePem: first.signing_private_pem, publicWire: first.signing_public_key }
+      : generateSigning();
+  const age =
+    first.age_identity && first.age_public_key
+      ? { identity: first.age_identity, recipient: first.age_public_key }
+      : await generateAge();
+
+  const creds: Creds = {
+    ...first,
+    signing_private_pem: signing.privatePem,
+    signing_public_key: signing.publicWire,
+    age_identity: age.identity,
+    age_public_key: age.recipient,
+  };
+  saveCreds(creds);
+
+  for (const [path, body] of [
+    ["/v0/keys/signing", { public_key: creds.signing_public_key }],
+    ["/v0/keys/age", { public_key: creds.age_public_key }],
+  ] as const) {
+    const pub = await api(`${url}${path}`, "POST", creds.token, body);
+    if (pub.status >= 400) show(pub.status, pub.json);
+  }
+
+  const me = await api(`${url}/v0/handles/me`, "GET", creds.token);
+  const j = me.json as {
+    signing_public_key?: string | null;
+    age_public_key?: string | null;
+    keys_ready?: boolean;
+  };
+  if (
+    me.status >= 400 ||
+    j.signing_public_key !== creds.signing_public_key ||
+    j.age_public_key !== creds.age_public_key ||
+    j.keys_ready !== true
+  ) {
+    die("Published keys did not verify. Secrets are already on disk; retry latch keygen.");
+  }
+  return creds;
+}
+
+function successCreds(creds: Creds, extra?: Record<string, unknown>): void {
+  console.log(
+    JSON.stringify(
+      {
+        actor_id: creds.actor_id,
+        handle: creds.handle,
+        creds: credsPath(),
+        keys_ready: true,
+        warning:
+          "Token, recovery_secret, and key material stored locally (mode 600). Do not paste them into chat.",
+        ...extra,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 async function main(): Promise<void> {
@@ -173,39 +270,37 @@ async function main(): Promise<void> {
       token: string;
       recovery_secret: string;
     };
-    const signing = generateSigning();
-    const age = await generateAge();
-    const creds: Creds = {
-      url,
-      handle: j.handle,
-      actor_id: j.actor_id,
-      token: j.token,
-      recovery_secret: j.recovery_secret,
-      signing_private_pem: signing.privatePem,
-      signing_public_key: signing.publicWire,
-      age_identity: age.identity,
-      age_public_key: age.recipient,
-    };
-    saveCreds(creds);
-    for (const [path, body] of [
-      ["/v0/keys/signing", { public_key: signing.publicWire }],
-      ["/v0/keys/age", { public_key: age.recipient }],
-    ] as const) {
-      const pub = await api(`${url}${path}`, "POST", creds.token, body);
-      if (pub.status >= 400) show(pub.status, pub.json);
+    const creds = await persistThenPublishKeys(url, j);
+    successCreds(creds);
+    return;
+  }
+
+  if (cmd === "join") {
+    const handle = pos[0];
+    if (!handle) die("usage: latch join <handle> --webhook-url URL [--auth-mode authorization] …");
+    const url = baseUrl();
+    const webhookUrl = typeof flags["webhook-url"] === "string" ? flags["webhook-url"] : undefined;
+    const body: Record<string, string> = { handle };
+    if (webhookUrl) body.webhook_url = webhookUrl;
+    if (typeof flags["auth-mode"] === "string") body.webhook_auth_mode = flags["auth-mode"];
+    if (typeof flags.secret === "string") body.webhook_secret = flags.secret;
+    if (typeof flags.authorization === "string") {
+      body.webhook_authorization = flags.authorization;
     }
-    console.log(
-      JSON.stringify(
-        {
-          actor_id: creds.actor_id,
-          handle: creds.handle,
-          creds: credsPath(),
-          warning: "Token and recovery_secret stored in the creds file (mode 600). Do not paste them into chat.",
-        },
-        null,
-        2,
-      ),
-    );
+    if (typeof flags["join-code"] === "string") body.join_code = flags["join-code"];
+    const { status, json } = await api(`${url}/v0/join`, "POST", undefined, body);
+    if (status >= 400) {
+      show(status, json);
+      return;
+    }
+    const j = json as {
+      actor_id: string;
+      handle: string;
+      token: string;
+      recovery_secret: string;
+    };
+    const creds = await persistThenPublishKeys(url, j);
+    successCreds(creds, { webhook: (json as { webhook?: unknown }).webhook });
     return;
   }
 
@@ -224,25 +319,41 @@ async function main(): Promise<void> {
     }
     const j = json as { actor_id: string; handle: string; token: string };
     const existing = existsSync(credsPath()) ? loadCreds() : null;
-    const signing = existing?.signing_private_pem
-      ? {
-          privatePem: existing.signing_private_pem,
-          publicWire: existing.signing_public_key,
-        }
-      : generateSigning();
-    const creds: Creds = {
-      url,
+    const creds = await persistThenPublishKeys(url, {
       handle: j.handle,
       actor_id: j.actor_id,
       token: j.token,
       recovery_secret: secret,
-      signing_private_pem: signing.privatePem,
-      signing_public_key: signing.publicWire,
+      signing_private_pem: existing?.signing_private_pem,
+      signing_public_key: existing?.signing_public_key,
       age_identity: existing?.age_identity,
       age_public_key: existing?.age_public_key,
+    });
+    successCreds(creds);
+    return;
+  }
+
+  if (cmd === "reclaim") {
+    const handle = pos[0];
+    const reset = String(flags["reset-token"] ?? "");
+    if (!handle || !reset) die("usage: latch reclaim <handle> --reset-token lrt_…");
+    const url = baseUrl();
+    const { status, json } = await api(`${url}/v0/handles/reclaim`, "POST", undefined, {
+      handle,
+      reset_token: reset,
+    });
+    if (status >= 400) {
+      show(status, json);
+      return;
+    }
+    const j = json as {
+      actor_id: string;
+      handle: string;
+      token: string;
+      recovery_secret: string;
     };
-    saveCreds(creds);
-    show(200, { actor_id: j.actor_id, handle: j.handle, creds: credsPath() });
+    const creds = await persistThenPublishKeys(url, j);
+    successCreds(creds, { webhook_cleared: true });
     return;
   }
 
@@ -314,6 +425,14 @@ async function main(): Promise<void> {
     const toArg = pos[0];
     const text = typeof flags.body === "string" ? flags.body : "";
     if (!toArg || !text) die("usage: latch send <handle|act_…> --body TEXT");
+    if (!keysReady(creds)) {
+      die("keys_required: run latch keygen and confirm whoami.keys_ready before sending.");
+    }
+    const me = await api(`${url}/v0/handles/me`, "GET", creds.token);
+    const ready = (me.json as { keys_ready?: boolean }).keys_ready;
+    if (me.status >= 400 || ready !== true) {
+      die("keys_required: published age + Ed25519 keys were not verified.");
+    }
     const to = await resolveActor(creds, toArg);
     const grants = await api(`${url}/v0/grants`, "GET", creds.token);
     const list = (grants.json as { grants?: Array<{
@@ -369,7 +488,10 @@ async function main(): Promise<void> {
       return;
     }
     const env = r.json as { body?: string };
-    if (env.body && looksLikeAge(env.body) && creds.age_identity) {
+    if (env.body && looksLikeAge(env.body)) {
+      if (!creds.age_identity) {
+        die("No local age identity. Reclaim/keygen before opening ciphertext.");
+      }
       try {
         const plain = await ageDecrypt(creds.age_identity, env.body);
         console.log(
@@ -377,7 +499,7 @@ async function main(): Promise<void> {
         );
         return;
       } catch {
-        console.error("age decrypt failed; printing ciphertext envelope");
+        die("age decrypt failed. Ciphertext not printed. Do not retry with another key.");
       }
     }
     show(r.status, r.json);
@@ -398,12 +520,14 @@ async function main(): Promise<void> {
 
   if (cmd === "notify") {
     const hookUrl = pos[0];
-    const secret = String(flags.secret ?? "");
-    if (!hookUrl || !secret) die("usage: latch notify <url> --secret S");
-    const r = await api(`${url}/v0/notifications`, "PUT", creds.token, {
-      url: hookUrl,
-      secret,
-    });
+    if (!hookUrl) {
+      die("usage: latch notify <url> --auth-mode hmac|authorization|both [--secret S] [--authorization HEADER]");
+    }
+    const payload: Record<string, string> = { url: hookUrl };
+    if (typeof flags["auth-mode"] === "string") payload.auth_mode = flags["auth-mode"];
+    if (typeof flags.secret === "string") payload.secret = flags.secret;
+    if (typeof flags.authorization === "string") payload.authorization = flags.authorization;
+    const r = await api(`${url}/v0/notifications`, "PUT", creds.token, payload);
     show(r.status, r.json);
     return;
   }

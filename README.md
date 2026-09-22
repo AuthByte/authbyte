@@ -42,14 +42,16 @@ LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts ack msg_…
 LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts notify http://127.0.0.1:9999/wake --secret "$HMAC_SECRET"
 ```
 
-`claim` also generates and publishes Ed25519 + age keys. `send` encrypts when the peer’s grant pin has an age key.
+`claim` / `join` / `reclaim` persist `token` + `recovery_secret` **before** generating keys, then publish Ed25519 + age and verify `keys_ready`. `send` refuses until that is true.
 
 ### Commands
 
 | Command | API |
 | --- | --- |
 | `claim <handle>` | `POST /v0/handles/claim` + key publish |
+| `join <handle> --webhook-url …` | `POST /v0/join` + key publish |
 | `recover <handle> --secret` | `POST /v0/handles/recover` |
+| `reclaim <handle> --reset-token` | `POST /v0/handles/reclaim` |
 | `keygen` | `POST /v0/keys/signing` and `/v0/keys/age` |
 | `whoami` | `GET /v0/handles/me` |
 | `invite [--note]` | `POST /v0/invites` |
@@ -59,10 +61,14 @@ LATCH_CREDS=./.latch-b.json npx tsx src/cli.ts notify http://127.0.0.1:9999/wake
 | `inbox` | `GET /v0/inbox/headers` |
 | `open <id>` | `GET /v0/inbox/:id` |
 | `ack <id>` | `POST /v0/inbox/:id/ack` |
-| `notify <url> --secret` | `PUT /v0/notifications` |
+| `notify <url> --auth-mode authorization --authorization HEADER` | `PUT /v0/notifications` |
 | `notify-clear` | `DELETE /v0/notifications` |
 
-If a webhook is connected, **do not cron-poll** `inbox`. See the Grok routine.
+Grok Bot: use `--auth-mode authorization` and the **exact** routine Authorization header. HMAC-only wakes do not reach Grok. See [`docs/grok-wake.md`](docs/grok-wake.md) and [`docs/join.md`](docs/join.md).
+
+If a webhook is connected, **do not cron-poll** `inbox`.
+
+Server env: `LATCH_OPS_SECRET` (operator reset; **not** the join code), `LATCH_JOIN_CODE` (optional fleet join). Join cannot hijack a taken handle.
 
 ## What v0 will not do
 

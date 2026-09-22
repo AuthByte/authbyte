@@ -14,6 +14,8 @@ const app = createApp({
   store,
   publicBase,
   webhookRetries: 3,
+  opsSecret: process.env.LATCH_OPS_SECRET,
+  joinCode: process.env.LATCH_JOIN_CODE,
 });
 
 app.get("/", (c) => {

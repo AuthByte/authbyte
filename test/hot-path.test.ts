@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { canonicalEnvelope } from "../src/canonical.js";
 import {
+  ageEncrypt,
+  generateAge,
   generateSigning,
   hmacValid,
   signCanonical,
@@ -30,35 +32,47 @@ async function json(
   return { status: res.status, body: text ? (JSON.parse(text) as Json) : {} };
 }
 
-async function register(app: ReturnType<typeof createApp>, handle: string) {
+async function register(
+  app: ReturnType<typeof createApp>,
+  handle: string,
+  opts?: { keys?: boolean },
+) {
   const claimed = await json(app, "POST", "/v0/handles/claim", { body: { handle } });
   expect(claimed.status).toBe(201);
-  const signing = generateSigning();
-  const pub = await json(app, "POST", "/v0/keys/signing", {
-    token: String(claimed.body.token),
-    body: { public_key: signing.publicWire },
-  });
-  expect(pub.status).toBe(200);
-  return {
+  const actor = {
     handle,
     actor_id: String(claimed.body.actor_id),
     token: String(claimed.body.token),
     recovery_secret: String(claimed.body.recovery_secret),
-    signing,
+    signing: generateSigning(),
+    age: await generateAge(),
   };
+  if (opts?.keys === false) return actor;
+  const pub = await json(app, "POST", "/v0/keys/signing", {
+    token: actor.token,
+    body: { public_key: actor.signing.publicWire },
+  });
+  expect(pub.status).toBe(200);
+  const age = await json(app, "POST", "/v0/keys/age", {
+    token: actor.token,
+    body: { public_key: actor.age.recipient },
+  });
+  expect(age.status).toBe(200);
+  return actor;
 }
 
-function signedEnvelope(
+async function signedMail(
   actor: Awaited<ReturnType<typeof register>>,
-  to: string,
-  body: string,
+  peer: Awaited<ReturnType<typeof register>>,
+  plaintext: string,
   extra?: { intent?: Intent; priority?: Priority; thread_id?: string; id?: string },
-): Envelope {
+): Promise<Envelope> {
+  const body = await ageEncrypt(peer.age.recipient, plaintext);
   const unsigned = {
     v: 0 as const,
     id: extra?.id ?? messageId(),
     from: actor.actor_id,
-    to,
+    to: peer.actor_id,
     intent: extra?.intent ?? ("message" as const),
     priority: extra?.priority ?? ("normal" as const),
     thread_id: extra?.thread_id,
@@ -101,7 +115,7 @@ describe("Latch v0 hot path", () => {
 
     const sent = await json(app, "POST", "/v0/messages", {
       token: alice.token,
-      body: signedEnvelope(alice, bob.actor_id, "venue changed, 6pm", {
+      body: await signedMail(alice, bob, "venue changed, 6pm", {
         thread_id: "thr_dinner",
       }),
     });
@@ -123,7 +137,8 @@ describe("Latch v0 hot path", () => {
 
     const opened = await json(app, "GET", `/v0/inbox/${id}`, { token: bob.token });
     expect(opened.status).toBe(200);
-    expect(opened.body.body).toBe("venue changed, 6pm");
+    expect(String(opened.body.body)).toContain("BEGIN AGE ENCRYPTED FILE");
+    expect(JSON.stringify(opened.body)).not.toContain("venue changed");
     expect(opened.body.sig).toBeTruthy();
 
     const acked = await json(app, "POST", `/v0/inbox/${id}/ack`, {
@@ -178,7 +193,7 @@ describe("Latch v0 hot path", () => {
 
     const badIntent = await json(app, "POST", "/v0/messages", {
       token: nebula.token,
-      body: signedEnvelope(nebula, friend.actor_id, "do this task", {
+      body: await signedMail(nebula, friend, "do this task", {
         intent: "need_help" as unknown as Intent,
       }),
     });
@@ -220,7 +235,7 @@ describe("Latch v0 hot path", () => {
 
     await json(app, "POST", "/v0/messages", {
       token: alice.token,
-      body: signedEnvelope(alice, bob.actor_id, "ping"),
+      body: await signedMail(alice, bob, "ping"),
     });
 
     expect(calls).toHaveLength(1);
@@ -256,7 +271,7 @@ describe("Latch v0 hot path", () => {
     });
     const sent = await json(app, "POST", "/v0/messages", {
       token: alice.token,
-      body: signedEnvelope(alice, bob.actor_id, "secret-payload-xyz"),
+      body: await signedMail(alice, bob, "secret-payload-xyz"),
     });
     const id = String(sent.body.id);
     await json(app, "POST", `/v0/inbox/${id}/ack`, { token: bob.token });
